@@ -1,0 +1,82 @@
+---
+# Reference Tauri shell CI.
+#
+# The shell is the reference implementation of the Arizona native-shell (OS)
+# capability contract, and it carries real `#[test]` functions asserting that
+# contract -- that every advertised capability appears in the page's init script,
+# and that `window_maximize` maximizes rather than toggles. They assert only the
+# shell's own constants, so this needs no arizona checkout.
+#
+# This is `make test`: it compiles the shell and runs its unit tests. No display
+# is needed. The full UI flow is still run manually (`make dev` against `make
+# server`); bundling the app (`make build`) is not part of CI -- it needs app
+# icons and produces artifacts nothing consumes.
+name: CI
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Rust from .tool-versions
+        uses: jdx/mise-action@08ae2a091c038e1e05ec6f5115dc5c69d5a2a6b8 # v5.1.2
+        with:
+          install_args: rust
+          cache: true
+
+      # Tauri v2's Linux prerequisites. `cargo test` only compiles the crate (it
+      # does not bundle), but the `tauri` crate itself links against the system
+      # webview, so these are needed to compile at all.
+      # See https://v2.tauri.app/start/prerequisites/
+      - name: Install the Linux webview dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      # The dependency tree is large (tauri pulls in the whole gtk/webkit stack),
+      # so cache the registry and the build directory. Keyed on Cargo.toml since
+      # no lockfile is committed for this shell.
+      - name: Cache cargo registry and target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: >-
+            tauri-cargo-${{ runner.os }}-${{ hashFiles(
+              'src-tauri/Cargo.toml', '.tool-versions') }}
+          restore-keys: |
+            tauri-cargo-${{ runner.os }}-
+
+      - name: Run the Tauri shell tests
+        run: make test

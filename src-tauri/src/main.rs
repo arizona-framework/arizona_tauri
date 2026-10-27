@@ -4,7 +4,7 @@
 // contract -- the SAME contract an Electron preload implements. It changes
 // nothing in Arizona: the window loads the remote Arizona app over the existing
 // web path, and the shell only provides the native capabilities the browser
-// sandbox forbids. See clients/tauri/README.md and docs/os.md.
+// sandbox forbids. See README.md and arizona's docs/os.md.
 
 // Hide the console window on a release Windows build (the app is a GUI, not a
 // console program). No-op on other platforms and in debug builds.
@@ -73,7 +73,7 @@ const INIT_SCRIPT: &str = r#"
 "#;
 
 fn main() {
-    // The Arizona app this shell wraps. Defaults to the in-repo OS demo; override
+    // The Arizona app this shell wraps. Defaults to arizona's e2e OS demo; override
     // with ARIZONA_URL to point at your deployment.
     let url =
         std::env::var("ARIZONA_URL").unwrap_or_else(|_| "http://localhost:4040/os".to_string());

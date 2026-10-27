@@ -7,7 +7,8 @@ Electron preload implements -- so it changes **nothing** in Arizona: the window
 loads the remote Arizona app over the existing web path, and the shell only adds
 the native capabilities the browser sandbox forbids.
 
-See [`docs/os.md`](../../docs/os.md) for the full contract.
+See arizona's [`docs/os.md`](https://github.com/arizona-framework/arizona/blob/main/docs/os.md)
+for the full contract.
 
 ## How it maps to the contract
 
@@ -30,8 +31,8 @@ fails "Plugin not found"), so the shell drives the **core window plugin** instea
 
 ## Run it
 
-Prerequisites: the **Rust toolchain** and **Node** -- both pinned in the repo's
-root `.tool-versions`, so `mise install` provisions them (mise auto-installs
+Prerequisites: the **Rust toolchain** and **Node** -- both pinned in
+`.tool-versions`, so `mise install` provisions them (mise auto-installs
 rustup). mise does **not** manage the platform **webview deps**, so install those
 from your OS package manager (on Arch: `webkit2gtk-4.1` + `libsoup` etc.; see the
 [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)):
@@ -42,19 +43,21 @@ sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl \
   appmenu-gtk-module libappindicator-gtk3 librsvg # system webview deps (Arch)
 ```
 
-1. Start the Arizona server with the OS demo route (`/os`) from the repo root:
+1. Start arizona's e2e server, which serves the OS demo route (`/os`), from the
+   arizona release pinned in `.arizona-version`:
 
    ```bash
-   make start            # serves http://localhost:4040 (incl. /os)
+   make arizona          # clone the pin into _arizona, once per pin
+   make server           # serves http://localhost:4040 (incl. /os)
    ```
 
-2. Launch the shell against it (from the repo root):
+2. Launch the shell against it:
 
    ```bash
-   make dev-tauri        # = cd clients/tauri && npm install && npm run dev; loads /os
+   make dev              # = npm install && npm run dev; loads /os
    ```
 
-   Point it elsewhere with `ARIZONA_URL=https://your-app.example.com make dev-tauri`.
+   Point it elsewhere with `ARIZONA_URL=https://your-app.example.com make dev`.
 
 You should see: the window-control buttons appear once connected (capability
 negotiated); **Maximize** / **Restore** switch the window between maximized and
@@ -83,9 +86,8 @@ is the app's own trusted server.
 
 ## Tests
 
-`make test-tauri` (from the repo root) compiles the shell and runs its Rust unit
-tests -- no display required. It is **opt-in** and not part of `make ci` (like the
-Android/iOS clients). The full UI flow is exercised manually with `npm run dev`
+`make test` compiles the shell and runs its Rust unit tests -- no display
+required; CI runs it on every push. The full UI flow is exercised manually with `npm run dev`
 above; an automated UI e2e (WebdriverIO + `tauri-driver`, Linux/Windows only) is a
 future addition.
 
@@ -93,3 +95,7 @@ A tiny placeholder `src-tauri/icons/icon.png` is committed so the shell compiles
 out of the box. Replace it with your own branding -- `npm run tauri icon
 path/to/icon.png` regenerates the full multi-resolution set used by `tauri build`
 installers.
+
+## License
+
+[Apache License 2.0](LICENSE.md).
